@@ -1,0 +1,36 @@
+{
+  "name": "VitalReading",
+  "type": "object",
+  "properties": {
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "ph": {
+      "type": "number"
+    },
+    "temperature": {
+      "type": "number"
+    },
+    "pulse": {
+      "type": "number"
+    },
+    "spo2": {
+      "type": "number"
+    },
+    "risk_score": {
+      "type": "number"
+    },
+    "is_baseline": {
+      "type": "boolean",
+      "default": false
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "patient_id"
+  ]
+}

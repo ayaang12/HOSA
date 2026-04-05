@@ -1,0 +1,75 @@
+{
+  "name": "Patient",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Patient full name"
+    },
+    "age": {
+      "type": "number",
+      "description": "Patient age"
+    },
+    "room": {
+      "type": "string",
+      "description": "Room number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "warning",
+        "high_risk",
+        "baseline_recording"
+      ],
+      "default": "baseline_recording",
+      "description": "Current risk status"
+    },
+    "catheter_site": {
+      "type": "string",
+      "description": "Catheter insertion site"
+    },
+    "admission_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "baseline_ph": {
+      "type": "number"
+    },
+    "baseline_temperature": {
+      "type": "number"
+    },
+    "baseline_pulse": {
+      "type": "number"
+    },
+    "baseline_spo2": {
+      "type": "number"
+    },
+    "baseline_completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "latest_ph": {
+      "type": "number"
+    },
+    "latest_temperature": {
+      "type": "number"
+    },
+    "latest_pulse": {
+      "type": "number"
+    },
+    "latest_spo2": {
+      "type": "number"
+    },
+    "risk_score": {
+      "type": "number",
+      "default": 0
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

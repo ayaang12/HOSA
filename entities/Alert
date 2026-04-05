@@ -1,0 +1,54 @@
+{
+  "name": "Alert",
+  "type": "object",
+  "properties": {
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "patient_name": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "low"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Alert reason description"
+    },
+    "risk_score": {
+      "type": "number"
+    },
+    "ph_value": {
+      "type": "number"
+    },
+    "temperature_value": {
+      "type": "number"
+    },
+    "pulse_value": {
+      "type": "number"
+    },
+    "spo2_value": {
+      "type": "number"
+    },
+    "acknowledged": {
+      "type": "boolean",
+      "default": false
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "patient_id",
+    "reason"
+  ]
+}
