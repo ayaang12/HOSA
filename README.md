@@ -1,41 +1,52 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+# Base44 App
 
-**Welcome to your Base44 project** 
+This project can run locally in two modes:
 
-**About**
+- **Local mode (no Base44 app required):** runs without any app ID/URL.
+- **Connected mode (optional):** uses your Base44 app details for live data/auth.
 
-View and Edit  your app on [db.com](http://db.com) 
+## Prerequisites
 
-This project contains everything you need to run your app locally.
+1. Clone the repository.
+2. Open the project directory.
+3. Install dependencies:
 
-**Edit the code in your local development environment**
+   ```bash
+   npm install
+   ```
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+## Run locally (no app ID needed)
 
-**Prerequisites:** 
+Start the development server:
 
-1. Clone the repository using the project's Git URL 
-2. Navigate to the project directory
-3. Install dependencies: `npm install`
-4. Create an `.env.local` file and set the right environment variables
-
+```bash
+npm run dev
 ```
+
+Then open `http://localhost:5173`.
+
+If no Base44 app configuration is provided, the app now starts in a local fallback mode.
+
+## Optional: connect to a Base44 app
+
+If you want live Base44 backend/auth behavior, create `.env.local`:
+
+```env
 VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=your_backend_url
-
-e.g.
-VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.db.app
+VITE_BASE44_APP_BASE_URL=https://your-backend-url.db.app
 ```
 
-Run the app: `npm run dev`
+## Verify build
 
-**Publish your changes**
+```bash
+npm run build
+```
 
-Open [db.com](http://db.com) and click on Publish.
+## Publish
 
-**Docs & Support**
+Open [db.com](http://db.com) and click **Publish**.
 
-Documentation: [https://docs.db.com/Integrations/Using-GitHub](https://docs.db.com/Integrations/Using-GitHub)
+## Docs & support
 
-Support: [https://app.db.com/support](https://app.db.com/support)
+- Docs: <https://docs.db.com/Integrations/Using-GitHub>
+- Support: <https://app.db.com/support>
