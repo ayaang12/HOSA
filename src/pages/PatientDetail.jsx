@@ -1,5 +1,3 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -14,6 +12,7 @@ import { ArrowLeft, Play, Square, Activity, Trash2 } from 'lucide-react';
 import { getSensorData } from '@/lib/mockSensor';
 import { analyzeRisk, getSeverityFromScore } from '@/lib/detection';
 import { toast } from 'sonner';
+import db from '@/api/base44Client';
 
 export default function PatientDetail() {
   const urlParams = new URLSearchParams(window.location.search);
