@@ -1,6 +1,9 @@
-# MedGuard App
+# Base44 App
 
-This project now supports a **Supabase backend** with a local fallback mode.
+This project can run locally in two modes:
+
+- **Local mode (no Base44 app required):** runs without any app ID/URL.
+- **Connected mode (optional):** uses your Base44 app details for live data/auth.
 
 ## Prerequisites
 
@@ -12,7 +15,9 @@ This project now supports a **Supabase backend** with a local fallback mode.
    npm install
    ```
 
-## Run locally (no backend required)
+## Run locally (no app ID needed)
+
+Start the development server:
 
 ```bash
 npm run dev
@@ -20,21 +25,28 @@ npm run dev
 
 Then open `http://localhost:5173`.
 
-Without Supabase environment variables, the app runs in local fallback mode using in-memory/noop data responses.
+If no Base44 app configuration is provided, the app now starts in a local fallback mode.
 
-## Connect to Supabase (recommended)
+## Optional: connect to a Base44 app
 
-Create `.env.local` with:
+If you want live Base44 backend/auth behavior, create `.env.local`:
 
 ```env
-VITE_SUPABASE_URL=https://your-project-ref.supabase.co
-VITE_SUPABASE_ANON_KEY=your_anon_key
+VITE_BASE44_APP_ID=your_app_id
+VITE_BASE44_APP_BASE_URL=https://your-backend-url.db.app
 ```
-
-With these set, entity reads/writes and auth checks use Supabase.
 
 ## Verify build
 
 ```bash
 npm run build
 ```
+
+## Publish
+
+Open [db.com](http://db.com) and click **Publish**.
+
+## Docs & support
+
+- Docs: <https://docs.db.com/Integrations/Using-GitHub>
+- Support: <https://app.db.com/support>

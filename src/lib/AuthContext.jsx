@@ -1,8 +1,42 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
+import { appParams } from '@/lib/app-params';
 import db from '@/api/base44Client';
 
 const AuthContext = createContext();
+
+const getErrorPayload = async (response) => {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+};
+
+const getPublicSettings = async ({ appId, token }) => {
+  const headers = {
+    'X-App-Id': appId,
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`/api/apps/public/prod/public-settings/by-id/${appId}`, {
+    method: 'GET',
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await getErrorPayload(response);
+    const error = new Error(errorData?.message || `Failed to load app settings (${response.status})`);
+    error.status = response.status;
+    error.data = errorData;
+    throw error;
+  }
+
+  return response.json();
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -17,14 +51,79 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAppState = async () => {
-    setIsLoadingPublicSettings(true);
-    setIsLoadingAuth(true);
-    setAuthError(null);
+    try {
+      setIsLoadingPublicSettings(true);
+      setAuthError(null);
 
-    setAppPublicSettings({
-      backend: db.isSupabaseConfigured ? 'supabase' : 'local',
-      localMode: !db.isSupabaseConfigured,
-    });
+      if (!appParams.appId) {
+        // Local/demo mode fallback when no Base44 app ID is configured.
+        setAppPublicSettings({
+          id: 'local-dev',
+          public_settings: {},
+          localMode: true,
+        });
+        setIsLoadingPublicSettings(false);
+        setIsLoadingAuth(false);
+        setIsAuthenticated(false);
+        return;
+      }
+
+      try {
+        const publicSettings = await getPublicSettings({
+          appId: appParams.appId,
+          token: appParams.token,
+        });
+        setAppPublicSettings(publicSettings);
+
+        // If we got the app public settings successfully, check if user is authenticated
+        if (appParams.token) {
+          await checkUserAuth();
+        } else {
+          setIsLoadingAuth(false);
+          setIsAuthenticated(false);
+        }
+        setIsLoadingPublicSettings(false);
+      } catch (appError) {
+        console.error('App state check failed:', appError);
+
+        // Handle app-level errors
+        if (appError.status === 403 && appError.data?.extra_data?.reason) {
+          const reason = appError.data.extra_data.reason;
+          if (reason === 'auth_required') {
+            setAuthError({
+              type: 'auth_required',
+              message: 'Authentication required'
+            });
+          } else if (reason === 'user_not_registered') {
+            setAuthError({
+              type: 'user_not_registered',
+              message: 'User not registered for this app'
+            });
+          } else {
+            setAuthError({
+              type: reason,
+              message: appError.message
+            });
+          }
+        } else {
+          setAuthError({
+            type: 'unknown',
+            message: appError.message || 'Failed to load app'
+          });
+        }
+        setIsLoadingPublicSettings(false);
+        setIsLoadingAuth(false);
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      setAuthError({
+        type: 'unknown',
+        message: error.message || 'An unexpected error occurred'
+      });
+      setIsLoadingPublicSettings(false);
+      setIsLoadingAuth(false);
+    }
+  };
 
     try {
       const currentUser = await db.auth.me();
@@ -33,13 +132,14 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       setUser(null);
       setIsAuthenticated(false);
-      setAuthError({
-        type: 'auth_error',
-        message: error.message || 'Failed to check authentication',
-      });
-    } finally {
-      setIsLoadingPublicSettings(false);
-      setIsLoadingAuth(false);
+
+      // If user auth fails, it might be an expired token
+      if (error.status === 401 || error.status === 403) {
+        setAuthError({
+          type: 'auth_required',
+          message: 'Authentication required'
+        });
+      }
     }
   };
 
