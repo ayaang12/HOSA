@@ -3,15 +3,15 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 
 const chartColors = {
-  ph: '#2563eb',
+  conductivity: '#2563eb',
   temperature: '#ea580c',
   pulse: '#e11d48',
   spo2: '#0891b2',
 };
 
 const chartLabels = {
-  ph: 'pH Level',
-  temperature: 'Temperature (°C)',
+  conductivity: 'Conductivity (mS/cm)',
+  temperature: 'Temperature (C)',
   pulse: 'Pulse (bpm)',
   spo2: 'SpO2 (%)',
 };

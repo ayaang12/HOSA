@@ -22,7 +22,7 @@ export default function PatientTable({ patients = [] }) {
             <TableHead className="font-semibold">Room</TableHead>
             <TableHead className="font-semibold">Status</TableHead>
             <TableHead className="font-semibold">Risk Score</TableHead>
-            <TableHead className="font-semibold">pH</TableHead>
+            <TableHead className="font-semibold">Conductivity</TableHead>
             <TableHead className="font-semibold">Temp</TableHead>
             <TableHead className="font-semibold">Pulse</TableHead>
             <TableHead className="font-semibold">SpO2</TableHead>
@@ -35,20 +35,20 @@ export default function PatientTable({ patients = [] }) {
               <TableCell>
                 <div>
                   <p className="font-medium text-foreground">{patient.name}</p>
-                  <p className="text-xs text-muted-foreground">Age: {patient.age || '—'}</p>
+                  <p className="text-xs text-muted-foreground">Age: {patient.age || '-'}</p>
                 </div>
               </TableCell>
-              <TableCell className="text-sm">{patient.room || '—'}</TableCell>
+              <TableCell className="text-sm">{patient.room || '-'}</TableCell>
               <TableCell><StatusBadge status={patient.status} /></TableCell>
               <TableCell>
                 <span className="text-sm font-mono font-semibold">
-                  {patient.risk_score != null ? `${Math.round(patient.risk_score * 100)}%` : '—'}
+                  {patient.risk_score != null ? `${Math.round(patient.risk_score * 100)}%` : '-'}
                 </span>
               </TableCell>
-              <TableCell className="text-sm font-mono">{patient.latest_ph ?? '—'}</TableCell>
-              <TableCell className="text-sm font-mono">{patient.latest_temperature ?? '—'}°C</TableCell>
-              <TableCell className="text-sm font-mono">{patient.latest_pulse ?? '—'}</TableCell>
-              <TableCell className="text-sm font-mono">{patient.latest_spo2 ?? '—'}%</TableCell>
+              <TableCell className="text-sm font-mono">{patient.latest_conductivity ?? '-'} mS/cm</TableCell>
+              <TableCell className="text-sm font-mono">{patient.latest_temperature ?? '-'} C</TableCell>
+              <TableCell className="text-sm font-mono">{patient.latest_pulse ?? '-'}</TableCell>
+              <TableCell className="text-sm font-mono">{patient.latest_spo2 ?? '-'}%</TableCell>
               <TableCell>
                 <Link 
                   to={`/patients/${patient.id}`}

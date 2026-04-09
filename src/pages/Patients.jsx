@@ -72,7 +72,7 @@ export default function Patients() {
                           {patient.name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Room {patient.room || '—'} · Age {patient.age || '—'}
+                          Room {patient.room || '-'} | Age {patient.age || '-'}
                         </p>
                       </div>
                     </div>

@@ -1,14 +1,14 @@
 import { cn } from '@/lib/utils';
 
 const vitalConfig = {
-  ph: { label: 'pH Level', unit: '', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
-  temperature: { label: 'Temperature', unit: '°C', color: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200' },
+  conductivity: { label: 'Conductivity', unit: 'mS/cm', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
+  temperature: { label: 'Temperature', unit: 'C', color: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200' },
   pulse: { label: 'Pulse', unit: 'bpm', color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200' },
   spo2: { label: 'SpO2', unit: '%', color: 'text-cyan-600', bgColor: 'bg-cyan-50', borderColor: 'border-cyan-200' },
 };
 
 export default function VitalCard({ type, value, baseline, deviation, icon: Icon }) {
-  const config = vitalConfig[type] || vitalConfig.ph;
+  const config = vitalConfig[type] || vitalConfig.conductivity;
   const deviationNum = parseFloat(deviation) || 0;
   const isElevated = deviationNum > 5;
 
@@ -29,7 +29,7 @@ export default function VitalCard({ type, value, baseline, deviation, icon: Icon
       </div>
       <div className="flex items-baseline gap-1.5">
         <span className="text-2xl font-bold text-foreground">
-          {value != null ? value : '—'}
+          {value != null ? value : '-'}
         </span>
         <span className="text-sm text-muted-foreground">{config.unit}</span>
       </div>
@@ -43,7 +43,7 @@ export default function VitalCard({ type, value, baseline, deviation, icon: Icon
               "text-xs font-medium",
               deviationNum > 5 ? "text-red-600" : "text-emerald-600"
             )}>
-              {deviationNum > 0 ? `↑${deviation}%` : `${deviation}%`}
+              {deviationNum > 0 ? `+${deviation}%` : `${deviation}%`}
             </span>
           )}
         </div>

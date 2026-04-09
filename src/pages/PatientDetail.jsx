@@ -8,15 +8,14 @@ import StatusBadge from '@/components/shared/StatusBadge';
 import RiskGauge from '@/components/shared/RiskGauge';
 import BaselinePanel from '@/components/patient/BaselinePanel';
 import VitalsChart from '@/components/patient/VitalsChart';
-import { ArrowLeft, Play, Square, Activity, Trash2 } from 'lucide-react';
+import { ArrowLeft, Play, Square, Activity } from 'lucide-react';
 import { getSensorData } from '@/lib/mockSensor';
 import { analyzeRisk, getSeverityFromScore } from '@/lib/detection';
 import { toast } from 'sonner';
 import db from '@/api/base44Client';
 
 export default function PatientDetail() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const patientId = window.location.pathname.split('/patients/')[1];
+    const patientId = window.location.pathname.split('/patients/')[1];
   const queryClient = useQueryClient();
 
   const [monitoring, setMonitoring] = useState(false);
@@ -87,7 +86,7 @@ export default function PatientDetail() {
 
           // After ~12 readings (60 seconds at 5s intervals), compute baseline
           if (updated.length >= 12) {
-            const avgPh = parseFloat((updated.reduce((s, r) => s + r.ph, 0) / updated.length).toFixed(2));
+            const avgCond = parseFloat((updated.reduce((s, r) => s + r.conductivity, 0) / updated.length).toFixed(2));
             const avgTemp = parseFloat((updated.reduce((s, r) => s + r.temperature, 0) / updated.length).toFixed(1));
             const avgPulse = Math.round(updated.reduce((s, r) => s + r.pulse, 0) / updated.length);
             const avgSpo2 = Math.round(updated.reduce((s, r) => s + r.spo2, 0) / updated.length);
@@ -95,7 +94,7 @@ export default function PatientDetail() {
             updatePatientMutation.mutate({
               id: patient.id,
               data: {
-                baseline_ph: avgPh,
+                baseline_conductivity: avgCond,
                 baseline_temperature: avgTemp,
                 baseline_pulse: avgPulse,
                 baseline_spo2: avgSpo2,
@@ -123,7 +122,7 @@ export default function PatientDetail() {
       } else {
         // Active monitoring
         const baseline = {
-          ph: patient.baseline_ph,
+          conductivity: patient.baseline_conductivity,
           temperature: patient.baseline_temperature,
           pulse: patient.baseline_pulse,
           spo2: patient.baseline_spo2,
@@ -148,7 +147,7 @@ export default function PatientDetail() {
         updatePatientMutation.mutate({
           id: patient.id,
           data: {
-            latest_ph: sensorData.ph,
+            latest_conductivity: sensorData.conductivity,
             latest_temperature: sensorData.temperature,
             latest_pulse: sensorData.pulse,
             latest_spo2: sensorData.spo2,
@@ -165,7 +164,7 @@ export default function PatientDetail() {
             severity: getSeverityFromScore(analysis.score),
             reason: analysis.reasons.join(' + '),
             risk_score: analysis.score,
-            ph_value: sensorData.ph,
+            conductivity_value: sensorData.conductivity,
             temperature_value: sensorData.temperature,
             pulse_value: sensorData.pulse,
             spo2_value: sensorData.spo2,
@@ -174,7 +173,7 @@ export default function PatientDetail() {
           });
 
           if (analysis.score >= 0.5) {
-            toast.error(`⚠️ High risk detected for ${patient.name}: ${analysis.reasons[0]}`);
+            toast.error(`High risk detected for ${patient.name}: ${analysis.reasons[0]}`);
           }
         }
       }
@@ -189,8 +188,8 @@ export default function PatientDetail() {
   useEffect(() => () => stopMonitoring(), [stopMonitoring]);
 
   const deviations = patient?.baseline_completed ? analyzeRisk(
-    { ph: patient.latest_ph, temperature: patient.latest_temperature, pulse: patient.latest_pulse, spo2: patient.latest_spo2 },
-    { ph: patient.baseline_ph, temperature: patient.baseline_temperature, pulse: patient.baseline_pulse, spo2: patient.baseline_spo2 }
+    { conductivity: patient.latest_conductivity, temperature: patient.latest_temperature, pulse: patient.latest_pulse, spo2: patient.latest_spo2 },
+    { conductivity: patient.baseline_conductivity, temperature: patient.baseline_temperature, pulse: patient.baseline_pulse, spo2: patient.baseline_spo2 }
   ).deviations : {};
 
   const sortedReadings = [...readings].reverse();
@@ -218,7 +217,7 @@ export default function PatientDetail() {
             <StatusBadge status={patient.status} />
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Room {patient.room || '—'} · Age {patient.age || '—'} · {patient.catheter_site || 'No catheter info'}
+            Room {patient.room || '-'} | Age {patient.age || '-'} | {patient.catheter_site || 'No catheter info'}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -283,7 +282,7 @@ export default function PatientDetail() {
       {/* Charts */}
       {sortedReadings.length > 0 && (
         <div className="grid md:grid-cols-2 gap-4">
-          <VitalsChart readings={sortedReadings} type="ph" baseline={patient.baseline_ph} />
+          <VitalsChart readings={sortedReadings} type="conductivity" baseline={patient.baseline_conductivity} />
           <VitalsChart readings={sortedReadings} type="temperature" baseline={patient.baseline_temperature} />
           <VitalsChart readings={sortedReadings} type="pulse" baseline={patient.baseline_pulse} />
           <VitalsChart readings={sortedReadings} type="spo2" baseline={patient.baseline_spo2} />
@@ -292,3 +291,5 @@ export default function PatientDetail() {
     </div>
   );
 }
+
+

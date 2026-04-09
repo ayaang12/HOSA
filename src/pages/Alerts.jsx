@@ -100,8 +100,8 @@ export default function Alerts() {
                     </div>
                     <p className="text-sm text-muted-foreground">{alert.reason}</p>
                     <div className="flex flex-wrap gap-4 mt-2 text-xs text-muted-foreground">
-                      {alert.ph_value != null && <span>pH: {alert.ph_value}</span>}
-                      {alert.temperature_value != null && <span>Temp: {alert.temperature_value}°C</span>}
+                      {alert.conductivity_value != null && <span>Conductivity: {alert.conductivity_value} mS/cm</span>}
+                      {alert.temperature_value != null && <span>Temp: {alert.temperature_value} C</span>}
                       {alert.pulse_value != null && <span>Pulse: {alert.pulse_value}</span>}
                       {alert.spo2_value != null && <span>SpO2: {alert.spo2_value}%</span>}
                       {alert.risk_score != null && <span>Score: {Math.round(alert.risk_score * 100)}%</span>}

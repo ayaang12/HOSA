@@ -17,8 +17,8 @@
  * 
  * DATA FORMAT:
  * {
- *   "ph": 7.35,           // Range: 6.5 - 8.0
- *   "temperature": 37.0,   // Range: 35.0 - 42.0 (°C)
+ *   "conductivity": 15.2,  // Range: 12 - 18 mS/cm
+ *   "temperature": 37.0,   // Range: 35.0 - 42.0 (C)
  *   "pulse": 75,           // Range: 40 - 180 (bpm)
  *   "spo2": 98             // Range: 85 - 100 (%)
  * }
@@ -26,7 +26,7 @@
 
 // Normal baseline ranges
 const NORMAL_RANGES = {
-  ph: { min: 7.25, max: 7.45, mean: 7.35 },
+  conductivity: { min: 12.0, max: 18.0, mean: 15.0 },
   temperature: { min: 36.1, max: 37.2, mean: 36.6 },
   pulse: { min: 60, max: 100, mean: 75 },
   spo2: { min: 95, max: 100, mean: 98 },
@@ -44,7 +44,7 @@ function gaussianRandom(mean, stdDev) {
  */
 export function generateNormalReading() {
   return {
-    ph: parseFloat(gaussianRandom(NORMAL_RANGES.ph.mean, 0.03).toFixed(2)),
+    conductivity: parseFloat(gaussianRandom(NORMAL_RANGES.conductivity.mean, 0.35).toFixed(2)),
     temperature: parseFloat(gaussianRandom(NORMAL_RANGES.temperature.mean, 0.2).toFixed(1)),
     pulse: Math.round(gaussianRandom(NORMAL_RANGES.pulse.mean, 5)),
     spo2: Math.min(100, Math.round(gaussianRandom(NORMAL_RANGES.spo2.mean, 1))),
@@ -57,16 +57,16 @@ export function generateNormalReading() {
  */
 export function generateAbnormalReading(severity = 'mild') {
   const factors = {
-    mild: { phShift: 0.15, tempShift: 0.8, pulseShift: 15, spo2Shift: -2 },
-    moderate: { phShift: 0.35, tempShift: 1.5, pulseShift: 30, spo2Shift: -5 },
-    severe: { phShift: 0.6, tempShift: 2.5, pulseShift: 50, spo2Shift: -10 },
+    mild: { conductivityShift: 1.5, tempShift: 0.8, pulseShift: 15, spo2Shift: -2 },
+    moderate: { conductivityShift: 3.0, tempShift: 1.5, pulseShift: 30, spo2Shift: -5 },
+    severe: { conductivityShift: 5.0, tempShift: 2.5, pulseShift: 50, spo2Shift: -10 },
   };
 
   const f = factors[severity] || factors.mild;
-  const direction = Math.random() > 0.5 ? 1 : -1;
+  const direction = 1; // Conductivity typically rises with exudate/ion load
 
   return {
-    ph: parseFloat((NORMAL_RANGES.ph.mean + direction * f.phShift + gaussianRandom(0, 0.02)).toFixed(2)),
+    conductivity: parseFloat((NORMAL_RANGES.conductivity.mean + direction * f.conductivityShift + gaussianRandom(0, 0.25)).toFixed(2)),
     temperature: parseFloat((NORMAL_RANGES.temperature.mean + f.tempShift + gaussianRandom(0, 0.1)).toFixed(1)),
     pulse: Math.round(NORMAL_RANGES.pulse.mean + f.pulseShift + gaussianRandom(0, 3)),
     spo2: Math.max(70, Math.min(100, Math.round(NORMAL_RANGES.spo2.mean + f.spo2Shift + gaussianRandom(0, 1)))),
@@ -81,7 +81,7 @@ export function generateAbnormalReading(severity = 'mild') {
  * This is the function to replace when connecting real hardware.
  * 
  * @param {string} mode - 'normal', 'mild', 'moderate', 'severe'
- * @returns {Object} Sensor reading { ph, temperature, pulse, spo2 }
+ * @returns {Object} Sensor reading { conductivity, temperature, pulse, spo2 }
  */
 export function getSensorData(mode = 'normal') {
   if (mode === 'normal') {

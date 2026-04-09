@@ -22,10 +22,10 @@ export default function BaselinePanel({ patient, deviations = {} }) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       <VitalCard
-        type="ph"
-        value={patient.latest_ph}
-        baseline={patient.baseline_ph}
-        deviation={deviations.ph}
+        type="conductivity"
+        value={patient.latest_conductivity}
+        baseline={patient.baseline_conductivity}
+        deviation={deviations.conductivity}
         icon={Droplets}
       />
       <VitalCard

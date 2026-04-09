@@ -18,19 +18,19 @@
 // These control how much each vital sign contributes to the risk score.
 // All weights should sum to 1.0
 const WEIGHTS = {
-  ph: 0.35,          // pH near catheter — highest weight (most indicative of infection)
-  temperature: 0.25, // Body temperature — fever is a key infection sign
-  pulse: 0.20,       // Heart rate — elevated with infection
-  spo2: 0.20,        // Oxygen saturation — drops with systemic infection
+  conductivity: 0.35, // Electrical conductivity near catheter - strongest local infection signal
+  temperature: 0.25,  // Body temperature - fever is a key infection sign
+  pulse: 0.20,        // Heart rate - elevated with infection
+  spo2: 0.20,         // Oxygen saturation - drops with systemic infection
 };
 
 // === THRESHOLDS ===
 // Percentage deviation from baseline that triggers concern
 const DEVIATION_THRESHOLDS = {
-  ph: 0.05,          // 5% deviation is significant for pH
-  temperature: 0.02, // 2% (~0.7°C from 37°C)
-  pulse: 0.15,       // 15% increase
-  spo2: 0.03,        // 3% drop is concerning
+  conductivity: 0.08, // ~8% jump in local conductivity is meaningful
+  temperature: 0.02,  // 2% (~0.7C from 37C)
+  pulse: 0.15,        // 15% increase
+  spo2: 0.03,         // 3% drop is concerning
 };
 
 // Risk score thresholds for severity classification
@@ -62,8 +62,8 @@ function normalizeDeviation(deviation, threshold) {
  * MAIN ANALYSIS FUNCTION
  * ========================================
  * 
- * @param {Object} data - Current sensor readings { ph, temperature, pulse, spo2 }
- * @param {Object} baseline - Baseline readings { ph, temperature, pulse, spo2 }
+ * @param {Object} data - Current sensor readings { conductivity, temperature, pulse, spo2 }
+ * @param {Object} baseline - Baseline readings { conductivity, temperature, pulse, spo2 }
  * @returns {Object} { score, severity, reasons, deviations }
  * 
  * TO REPLACE WITH AI MODEL:
@@ -77,14 +77,14 @@ export function analyzeRisk(data, baseline) {
   }
 
   const deviations = {
-    ph: calculateDeviation(data.ph, baseline.ph),
+    conductivity: calculateDeviation(data.conductivity, baseline.conductivity),
     temperature: calculateDeviation(data.temperature, baseline.temperature),
     pulse: calculateDeviation(data.pulse, baseline.pulse),
     spo2: calculateDeviation(data.spo2, baseline.spo2),
   };
 
   const normalizedDeviations = {
-    ph: normalizeDeviation(deviations.ph, DEVIATION_THRESHOLDS.ph),
+    conductivity: normalizeDeviation(deviations.conductivity, DEVIATION_THRESHOLDS.conductivity),
     temperature: normalizeDeviation(deviations.temperature, DEVIATION_THRESHOLDS.temperature),
     pulse: normalizeDeviation(deviations.pulse, DEVIATION_THRESHOLDS.pulse),
     spo2: normalizeDeviation(deviations.spo2, DEVIATION_THRESHOLDS.spo2),
@@ -92,7 +92,7 @@ export function analyzeRisk(data, baseline) {
 
   // Weighted score calculation
   const score =
-    normalizedDeviations.ph * WEIGHTS.ph +
+    normalizedDeviations.conductivity * WEIGHTS.conductivity +
     normalizedDeviations.temperature * WEIGHTS.temperature +
     normalizedDeviations.pulse * WEIGHTS.pulse +
     normalizedDeviations.spo2 * WEIGHTS.spo2;
@@ -105,8 +105,8 @@ export function analyzeRisk(data, baseline) {
 
   // Build reasons list
   const reasons = [];
-  if (normalizedDeviations.ph > 0.5) {
-    reasons.push(`pH deviation ${(deviations.ph * 100).toFixed(1)}% from baseline`);
+  if (normalizedDeviations.conductivity > 0.5) {
+    reasons.push(`Conductivity deviation ${(deviations.conductivity * 100).toFixed(1)}% from baseline`);
   }
   if (normalizedDeviations.temperature > 0.5) {
     reasons.push(`Temperature deviation ${(deviations.temperature * 100).toFixed(1)}%`);
@@ -123,7 +123,7 @@ export function analyzeRisk(data, baseline) {
     severity,
     reasons,
     deviations: {
-      ph: (deviations.ph * 100).toFixed(1),
+      conductivity: (deviations.conductivity * 100).toFixed(1),
       temperature: (deviations.temperature * 100).toFixed(1),
       pulse: (deviations.pulse * 100).toFixed(1),
       spo2: (deviations.spo2 * 100).toFixed(1),
@@ -142,3 +142,5 @@ export function getSeverityFromScore(score) {
 }
 
 export { WEIGHTS, DEVIATION_THRESHOLDS, SEVERITY_THRESHOLDS };
+
+

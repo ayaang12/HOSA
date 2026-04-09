@@ -58,8 +58,8 @@ export default function LiveMonitor() {
   useEffect(() => () => stopStream(), []);
 
   const vitals = [
-    { key: 'ph', label: 'pH', icon: Droplets, color: '#2563eb', value: latestReading?.ph, unit: '' },
-    { key: 'temperature', label: 'Temp', icon: Thermometer, color: '#ea580c', value: latestReading?.temperature, unit: '°C' },
+    { key: 'conductivity', label: 'Conductivity', icon: Droplets, color: '#2563eb', value: latestReading?.conductivity, unit: 'mS/cm' },
+    { key: 'temperature', label: 'Temp', icon: Thermometer, color: '#ea580c', value: latestReading?.temperature, unit: 'C' },
     { key: 'pulse', label: 'Pulse', icon: HeartPulse, color: '#e11d48', value: latestReading?.pulse, unit: 'bpm' },
     { key: 'spo2', label: 'SpO2', icon: Wind, color: '#0891b2', value: latestReading?.spo2, unit: '%' },
   ];
@@ -104,8 +104,9 @@ export default function LiveMonitor() {
           ? "bg-emerald-50 border-emerald-200 text-emerald-700"
           : "bg-muted border-border text-muted-foreground"
       )}>
-        <Activity className={cn("w-4 h-4", streaming && "animate-pulse")} />
-        {streaming ? `Streaming live data — ${data.length} readings` : 'Sensor stream idle'}
+        <Activity className={cn("w-4 h-4", streaming && "animate-pulse")}
+        />
+        {streaming ? `Streaming live data - ${data.length} readings` : 'Sensor stream idle'}
       </div>
 
       {/* Live Vitals */}
@@ -119,7 +120,7 @@ export default function LiveMonitor() {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-bold text-foreground">
-                  {v.value ?? '—'}
+                  {v.value ?? '-'}
                 </span>
                 <span className="text-sm text-muted-foreground">{v.unit}</span>
               </div>
