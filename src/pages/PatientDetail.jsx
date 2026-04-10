@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import db from '@/api/base44Client';
 
 export default function PatientDetail() {
-    const patientId = window.location.pathname.split('/patients/')[1];
+  const { id: patientId } = useParams();
   const queryClient = useQueryClient();
 
   const [monitoring, setMonitoring] = useState(false);
@@ -26,7 +26,7 @@ export default function PatientDetail() {
 
   const { data: patient, isLoading: pLoading } = useQuery({
     queryKey: ['patient', patientId],
-    queryFn: () => db.entities.Patient.list().then(all => all.find(p => p.id === patientId)),
+    queryFn: () => db.entities.Patient.get(patientId),
     enabled: !!patientId,
   });
 
