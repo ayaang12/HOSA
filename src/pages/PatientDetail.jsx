@@ -128,7 +128,10 @@ export default function PatientDetail() {
           spo2: patient.baseline_spo2,
         };
 
-        const analysis = analyzeRisk(sensorData, baseline);
+        const analysis = analyzeRisk(sensorData, baseline, {
+          history: readings,
+          currentTimestamp: timestamp,
+        });
 
         // Save reading
         createReadingMutation.mutate({
@@ -189,7 +192,8 @@ export default function PatientDetail() {
 
   const deviations = patient?.baseline_completed ? analyzeRisk(
     { conductivity: patient.latest_conductivity, temperature: patient.latest_temperature, pulse: patient.latest_pulse, spo2: patient.latest_spo2 },
-    { conductivity: patient.baseline_conductivity, temperature: patient.baseline_temperature, pulse: patient.baseline_pulse, spo2: patient.baseline_spo2 }
+    { conductivity: patient.baseline_conductivity, temperature: patient.baseline_temperature, pulse: patient.baseline_pulse, spo2: patient.baseline_spo2 },
+    { history: readings, currentTimestamp: new Date().toISOString() }
   ).deviations : {};
 
   const sortedReadings = [...readings].reverse();
@@ -291,5 +295,4 @@ export default function PatientDetail() {
     </div>
   );
 }
-
 

@@ -15,30 +15,33 @@
  */
 
 // === CONFIGURABLE WEIGHTS ===
-// These control how much each vital sign contributes to the risk score.
-// All weights should sum to 1.0
 const WEIGHTS = {
-  conductivity: 0.35, // Electrical conductivity near catheter - strongest local infection signal
-  temperature: 0.25,  // Body temperature - fever is a key infection sign
-  pulse: 0.20,        // Heart rate - elevated with infection
-  spo2: 0.20,         // Oxygen saturation - drops with systemic infection
+  conductivity: 0.25,
+  temperature: 0.20,
+  pulse: 0.30,
+  spo2: 0.35,
 };
 
 // === THRESHOLDS ===
-// Percentage deviation from baseline that triggers concern
+// Updated rules requested by clinical workflow:
+// - SpO2 change >= 4% is worrisome (immediate)
+// - Pulse absolute delta >= 15 bpm is worrisome (immediate)
+// - Temperature change 3-5% is worrisome only when it rises within <=10 min
+// - Conductivity change around 25% is worrisome only when it rises within <=10 min
 const DEVIATION_THRESHOLDS = {
-  conductivity: 0.08, // ~8% jump in local conductivity is meaningful
-  temperature: 0.02,  // 2% (~0.7C from 37C)
-  pulse: 0.15,        // 15% increase
-  spo2: 0.03,         // 3% drop is concerning
+  conductivity: 0.25,
+  temperature: 0.03,
+  temperatureHigh: 0.05,
+  pulseAbsolute: 15,
+  spo2: 0.04,
+  rapidWindowMinutes: 10,
 };
 
 // Risk score thresholds for severity classification
 const SEVERITY_THRESHOLDS = {
-  low: 0.3,      // Below this = normal
-  medium: 0.5,   // Below this = warning
-  high: 0.7,     // Below this = high risk
-  // Above high = critical
+  low: 0.25,
+  medium: 0.55,
+  high: 0.8,
 };
 
 /**
@@ -49,12 +52,25 @@ function calculateDeviation(current, baseline) {
   return Math.abs((current - baseline) / baseline);
 }
 
-/**
- * Normalize a deviation based on its threshold
- * Returns 0-1 where 1 means the deviation is at or beyond the threshold
- */
-function normalizeDeviation(deviation, threshold) {
-  return Math.min(deviation / threshold, 2.0); // Cap at 2x threshold
+function getIsoTime(reading) {
+  return reading?.timestamp || reading?.created_at || null;
+}
+
+function getAnchorReadingWithinWindow(history = [], currentTimestamp, windowMinutes) {
+  if (!Array.isArray(history) || history.length === 0) return null;
+  const currentMs = new Date(currentTimestamp).getTime();
+  if (Number.isNaN(currentMs)) return null;
+
+  const windowStartMs = currentMs - (windowMinutes * 60 * 1000);
+
+  return history
+    .filter((item) => {
+      const time = getIsoTime(item);
+      if (!time) return false;
+      const ms = new Date(time).getTime();
+      return !Number.isNaN(ms) && ms >= windowStartMs && ms < currentMs;
+    })
+    .sort((a, b) => new Date(getIsoTime(a)).getTime() - new Date(getIsoTime(b)).getTime())[0] || null;
 }
 
 /**
@@ -71,31 +87,61 @@ function normalizeDeviation(deviation, threshold) {
  *   const prediction = await myModel.predict(data, baseline);
  *   return { score: prediction.risk, severity: ..., reasons: [...] };
  */
-export function analyzeRisk(data, baseline) {
+export function analyzeRisk(data, baseline, context = {}) {
   if (!data || !baseline) {
     return { score: 0, severity: 'normal', reasons: [], deviations: {} };
   }
 
+  const { history = [], currentTimestamp = new Date().toISOString() } = context;
+  const anchor = getAnchorReadingWithinWindow(history, currentTimestamp, DEVIATION_THRESHOLDS.rapidWindowMinutes);
+
+  const pulseDeltaAbsolute = Math.abs((data.pulse ?? 0) - (baseline.pulse ?? 0));
+  const spo2Deviation = calculateDeviation(data.spo2, baseline.spo2);
+  const tempDeviation = calculateDeviation(data.temperature, baseline.temperature);
+  const conductivityDeviation = calculateDeviation(data.conductivity, baseline.conductivity);
+
+  const rapidTempDeviation = anchor
+    ? calculateDeviation(data.temperature, anchor.temperature)
+    : 0;
+  const rapidConductivityDeviation = anchor
+    ? calculateDeviation(data.conductivity, anchor.conductivity)
+    : 0;
+
+  const spo2Concern = spo2Deviation >= DEVIATION_THRESHOLDS.spo2;
+  const pulseConcern = pulseDeltaAbsolute >= DEVIATION_THRESHOLDS.pulseAbsolute;
+  const rapidTempConcern = tempDeviation >= DEVIATION_THRESHOLDS.temperature
+    && rapidTempDeviation >= DEVIATION_THRESHOLDS.temperature;
+  const rapidConductivityConcern = conductivityDeviation >= DEVIATION_THRESHOLDS.conductivity
+    && rapidConductivityDeviation >= DEVIATION_THRESHOLDS.conductivity;
+
   const deviations = {
-    conductivity: calculateDeviation(data.conductivity, baseline.conductivity),
-    temperature: calculateDeviation(data.temperature, baseline.temperature),
+    conductivity: conductivityDeviation,
+    temperature: tempDeviation,
     pulse: calculateDeviation(data.pulse, baseline.pulse),
-    spo2: calculateDeviation(data.spo2, baseline.spo2),
+    spo2: spo2Deviation,
   };
 
-  const normalizedDeviations = {
-    conductivity: normalizeDeviation(deviations.conductivity, DEVIATION_THRESHOLDS.conductivity),
-    temperature: normalizeDeviation(deviations.temperature, DEVIATION_THRESHOLDS.temperature),
-    pulse: normalizeDeviation(deviations.pulse, DEVIATION_THRESHOLDS.pulse),
-    spo2: normalizeDeviation(deviations.spo2, DEVIATION_THRESHOLDS.spo2),
-  };
+  let score = 0;
+  if (spo2Concern) {
+    score += WEIGHTS.spo2 + Math.min((spo2Deviation - DEVIATION_THRESHOLDS.spo2) * 3, 0.15);
+  }
+  if (pulseConcern) {
+    score += WEIGHTS.pulse + Math.min((pulseDeltaAbsolute - DEVIATION_THRESHOLDS.pulseAbsolute) / 100, 0.15);
+  }
+  if (rapidTempConcern) {
+    const tempThreshold = tempDeviation >= DEVIATION_THRESHOLDS.temperatureHigh
+      ? DEVIATION_THRESHOLDS.temperatureHigh
+      : DEVIATION_THRESHOLDS.temperature;
+    score += WEIGHTS.temperature + Math.min((tempDeviation - tempThreshold) * 4, 0.15);
+  }
+  if (rapidConductivityConcern) {
+    score += WEIGHTS.conductivity + Math.min((conductivityDeviation - DEVIATION_THRESHOLDS.conductivity), 0.2);
+  }
 
-  // Weighted score calculation
-  const score =
-    normalizedDeviations.conductivity * WEIGHTS.conductivity +
-    normalizedDeviations.temperature * WEIGHTS.temperature +
-    normalizedDeviations.pulse * WEIGHTS.pulse +
-    normalizedDeviations.spo2 * WEIGHTS.spo2;
+  // If temp + conductivity spike together quickly, keep it as a slight/early warning.
+  if (rapidTempConcern && rapidConductivityConcern) {
+    score = Math.min(score, 0.45);
+  }
 
   // Determine severity
   let severity = 'normal';
@@ -105,16 +151,19 @@ export function analyzeRisk(data, baseline) {
 
   // Build reasons list
   const reasons = [];
-  if (normalizedDeviations.conductivity > 0.5) {
-    reasons.push(`Conductivity deviation ${(deviations.conductivity * 100).toFixed(1)}% from baseline`);
+  if (rapidTempConcern && rapidConductivityConcern) {
+    reasons.push('Slight infection chance: temperature + conductivity changed quickly together');
   }
-  if (normalizedDeviations.temperature > 0.5) {
-    reasons.push(`Temperature deviation ${(deviations.temperature * 100).toFixed(1)}%`);
+  if (rapidConductivityConcern) {
+    reasons.push(`Conductivity rose ${(deviations.conductivity * 100).toFixed(1)}% within ${DEVIATION_THRESHOLDS.rapidWindowMinutes} min`);
   }
-  if (normalizedDeviations.pulse > 0.5) {
-    reasons.push(`Pulse deviation ${(deviations.pulse * 100).toFixed(1)}%`);
+  if (rapidTempConcern) {
+    reasons.push(`Temperature rose ${(deviations.temperature * 100).toFixed(1)}% within ${DEVIATION_THRESHOLDS.rapidWindowMinutes} min`);
   }
-  if (normalizedDeviations.spo2 > 0.5) {
+  if (pulseConcern) {
+    reasons.push(`Pulse changed by ${pulseDeltaAbsolute.toFixed(0)} bpm`);
+  }
+  if (spo2Concern) {
     reasons.push(`SpO2 deviation ${(deviations.spo2 * 100).toFixed(1)}%`);
   }
 
@@ -127,6 +176,7 @@ export function analyzeRisk(data, baseline) {
       temperature: (deviations.temperature * 100).toFixed(1),
       pulse: (deviations.pulse * 100).toFixed(1),
       spo2: (deviations.spo2 * 100).toFixed(1),
+      pulse_bpm_delta: pulseDeltaAbsolute.toFixed(0),
     },
   };
 }
@@ -142,5 +192,3 @@ export function getSeverityFromScore(score) {
 }
 
 export { WEIGHTS, DEVIATION_THRESHOLDS, SEVERITY_THRESHOLDS };
-
-
